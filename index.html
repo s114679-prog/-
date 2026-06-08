@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>今天吃什麼？選擇障礙拯救轉盤</title>
+    <style>
+        :root {
+            --primary-color: #ffb3ba; /* 馬卡龍粉紅 */
+            --secondary-color: #bae1ff; /* 馬卡龍粉藍 */
+            --dark-color: #5d5d5d;
+            --light-color: #fcf8f2;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'PingFang TC', 'Heiti TC', 'Microsoft JhengHei', sans-serif;
+        }
+
+        body {
+            background: linear-gradient(135deg, #fff5f5 0%, #e8f0fe 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.9);
+            padding: 35px;
+            border-radius: 24px;
+            box-shadow: 0 10px 40px rgba(165, 175, 185, 0.2);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            max-width: 550px;
+            width: 100%;
+            text-align: center;
+            border: 1px solid rgba(255, 255, 255, 0.7);
+        }
+
+        h1 {
+            color: #4a4a4a;
+            margin-bottom: 8px;
+            font-size: 2.1rem;
+            letter-spacing: 1px;
+        }
+
+        p.subtitle {
+            color: #9b9b9b;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        /* 轉盤外殼與指標 */
+        .wheel-wrapper {
+            position: relative;
+            width: 360px;
+            height: 360px;
+            margin-bottom: 30px;
+        }
+
+        /* 頂部粉嫩箭頭指標 */
+        .pointer {
+            position: absolute;
+            top: -15px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 0;
+            height: 0;
+            border-left: 16px solid transparent;
+            border-right: 16px solid transparent;
+            border-top: 32px solid #ff9aa2; /* 飽和度稍高一點點的馬卡龍粉，方便辨識 */
+            z-index: 10;
+            filter: drop-shadow(0 3px 4px rgba(0,0,0,0.1));
+        }
+
+        /* 轉盤本體 */
+        .wheel {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            border: 6px solid #ffffff;
+            position: relative;
+            overflow: hidden;
+            transition: transform 4s cubic-bezier(0.18, 0.89, 0.32, 1.02); /* 核心：CSS 旋轉動畫 */
+            box-shadow: 0 8px 24px rgba(140, 150, 160, 0.2), inset 0 0 15px rgba(0,0,0,0.05);
+            background: #fff;
+        }
+
+        /* 轉盤中心白色糖果軸心 */
+        .wheel::after {
+            content: '';
+            position: absolute;
+            width: 32px;
+            height: 32px;
+            background: white;
+            border-radius: 50%;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            z-index: 5;
+            box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+        }
+
+        /* 轉盤文字容器 */
+        .wheel-text-container {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+        }
+
+        /* 扇區文字置中與放大優化 */
+        .wheel-text {
+            position: absolute;
+            width: 50%;
+            height: 40px;
+            left: 50%;
+            top: 50%;
+            transform-origin: 0% 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center; /* 水平居中 */
+            box-sizing: border-box;
+            padding-left: 65px; /* 將文字精確推到扇形的視覺中心點 */
+            color: #555555; /* 改用優雅的深灰，配馬卡龍色比白色更好讀 */
+            font-weight: 700; /* 字體加粗 */
+            font-size: 1.35rem; /* 字體加大 */
+            white-space: nowrap;
+        }
+
+        /* 按鈕與輸入區域 */
+        .btn {
+            background: linear-gradient(135deg, #ffb3ba 0%, #ffc6ff 100%);
+            color: #524446;
+            border: none;
+            padding: 14px 35px;
+            font-size: 1.2rem;
+            font-weight: bold;
+            border-radius: 30px;
+            cursor: pointer;
+            box-shadow: 0 5px 15px rgba(255, 179, 186, 0.5);
+            transition: all 0.2s;
+            width: 100%;
+            margin-bottom: 25px;
+        }
+
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 7px 20px rgba(255, 179, 186, 0.7);
+        }
+
+        .btn:disabled {
+            background: #e0e0e0;
+            color: #a0a0a0;
+            box-shadow: none;
+            cursor: not-allowed;
+            transform: none;
+        }
+
+        .result-box {
+            font-size: 1.5rem;
+            font-weight: bold;
+            color: #6c5b7b;
+            height: 45px;
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        /* 清單編輯區 */
+        .list-section {
+            width: 100%;
+            border-top: 2px dashed #e8e8e8;
+            padding-top: 20px;
+            text-align: left;
+        }
+
+        .list-title {
+            font-size: 1rem;
+            color: #666;
+            margin-bottom: 12px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: bold;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 15px;
+        }
+
+        input[type="text"] {
+            flex: 1;
+            padding: 10px 14px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            outline: none;
+            font-size: 1rem;
+            background-color: #fff;
+            color: #4a4a4a;
+        }
+
+        input[type="text"]:focus {
+            border-color: var(--secondary-color);
+        }
+
+        .btn-add {
+            background: var(--secondary-color);
+            color: #3b4a5a;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 10px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 1rem;
+        }
+
+        .tags-container {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            max-height: 120px;
+            overflow-y: auto;
+            padding: 5px;
+        }
+
+        .tag {
+            background: #f0f4f8;
+            color: #5a6b7c;
+            padding: 6px 14px;
+            border-radius: 20px;
+            font-size: 0.9rem;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            font-weight: 600;
+            border: 1px solid #e1e8ed;
+        }
+
+        .tag .remove-btn {
+            cursor: pointer;
+            font-weight: bold;
+            color: #ff9aa2;
+            font-size: 1.1rem;
+        }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <h1>今天吃什麼？</h1>
+        <p class="subtitle">低飽和馬卡龍轉盤 ☕ 拯救選擇障礙大師</p>
+
+        <div class="wheel-wrapper">
+            <div class="pointer"></div>
+            <div class="wheel" id="wheel"></div>
+        </div>
+
+        <div class="result-box" id="resultBox">美味餐點準備中...🥞</div>
+        <button class="btn" id="spinBtn">決定就是你了！</button>
+
+        <div class="list-section">
+            <div class="list-title">
+                <span>我的美食口袋清單</span>
+                <span style="font-size: 0.8rem; color: #aaa;">（最少 2 個，最多 16 個）</span>
+            </div>
+            <div class="input-group">
+                <input type="text" id="foodInput" placeholder="輸入店名（建議 5 字內字體最大）" maxlength="7">
+                <button class="btn-add" id="addBtn">新增</button>
+            </div>
+            <div class="tags-container" id="tagsContainer"></div>
+        </div>
+    </div>
+
+    <script>
+        // 1. 預設美食陣列 (Array 操作學習重點)
+        let foodList = ["便當店", "手搖飲", "麥當勞", "牛肉麵", "健康餐盒", "義大利麵"];
+        
+        // 低飽和度夢幻馬卡龍色系庫（精心調配：粉紅、粉藍、粉黃、粉橘、粉紫、薄荷綠、草莓奶茶、霧藍）
+        const macaronColors = [
+            "#ffb3ba", "#bae1ff", "#ffffba", "#ffdfba", 
+            "#e8cafb", "#baffc9", "#ffdac1", "#c5e3ed"
+        ];
+
+        // DOM 元素
+        const wheel = document.getElementById('wheel');
+        const spinBtn = document.getElementById('spinBtn');
+        const resultBox = document.getElementById('resultBox');
+        const foodInput = document.getElementById('foodInput');
+        const addBtn = document.getElementById('addBtn');
+        const tagsContainer = document.getElementById('tagsContainer');
+
+        let currentRotation = 0;
+        let isSpinning = false;
+
+        // 2. 動態防撞色演算法：確保相鄰格子、以及首尾銜接處顏色絕對不同
+        function getSectorColor(index, total) {
+            let colorIndex = index % macaronColors.length;
+            
+            // 當前是最後一格，且總數大於 1 的時候
+            if (total > 1 && index === total - 1) {
+                // 如果最後一格的基礎顏色跟第一格 (Index 0) 撞色了，就強制往後跳一格顏色
+                if (colorIndex === 0) {
+                    colorIndex = (colorIndex + 1) % macaronColors.length;
+                }
+            }
+            return macaronColors[colorIndex];
+        }
+
+        // 3. 繪製轉盤面、文字精準置中、字體加大
+        function drawWheel() {
+            wheel.innerHTML = ''; // 清空舊內容
+            const total = foodList.length;
+            const sectorDegree = 360 / total; // 計算每個區塊角度
+
+            // A. 利用 CSS conic-gradient 繪製馬卡龍色圓盤背景
+            let gradientString = 'conic-gradient(';
+            foodList.forEach((food, index) => {
+                const startAngle = index * sectorDegree;
+                const endAngle = (index + 1) * sectorDegree;
+                const color = getSectorColor(index, total); // 呼叫防撞色機制
+                
+                gradientString += `${color} ${startAngle}deg ${endAngle}deg${index === total - 1 ? '' : ', '}`;
+            });
+            gradientString += ')';
+            wheel.style.background = gradientString;
+
+            // B. 建立獨立的文字容器
+            const textContainer = document.createElement('div');
+            textContainer.className = 'wheel-text-container';
+            wheel.appendChild(textContainer);
+
+            // C. 動態生成加大文字，並利用幾何 Transform 旋轉置中到各個扇區正中間
+            foodList.forEach((food, index) => {
+                const textDiv = document.createElement('div');
+                textDiv.className = 'wheel-text';
+                
+                // 計算扇區中心軸角度，並減去 90 度校正回頂端朝上起算
+                const textAngle = (index * sectorDegree) + (sectorDegree / 2) - 90; 
+                textDiv.style.transform = `rotate(${textAngle}deg)`;
+                
+                // 根據總數量動態微調字體大小與推移距離，確保不論項目多寡字都在「格子中心」
+                if (total > 12) {
+                    textDiv.style.fontSize = '0.95rem';
+                    textDiv.style.paddingLeft = '85px';
+                } else if (total > 8) {
+                    textDiv.style.fontSize = '1.15rem';
+                    textDiv.style.paddingLeft = '75px';
+                } else {
+                    textDiv.style.fontSize = '1.35rem'; // 預設超大字體
+                    textDiv.style.paddingLeft = '65px';  // 完美置中半徑比例
+                }
+
+                textDiv.innerText = food;
+                textContainer.appendChild(textDiv);
+            });
+
+            renderTags();
+        }
+
+        // 4. 渲染下方的管理標籤
+        function renderTags() {
+            tagsContainer.innerHTML = '';
+            foodList.forEach((food, index) => {
+                const tag = document.createElement('div');
+                tag.className = 'tag';
+                tag.innerHTML = `
+                    ${food}
+                    <span class="remove-btn" onclick="removeFood(${index})">&times;</span>
+                `;
+                tagsContainer.appendChild(tag);
+            });
+            
+            // 最少需要 2 個品項才能轉動
+            spinBtn.disabled = foodList.length < 2;
+        }
+
+        // 5. 隨機數與旋轉動畫控制 (Random & Animation 學習重點)
+        function getRandomTarget() {
+            // 隨機產生一個合法的陣列索引值 (0 到 foodList.length - 1)
+            return Math.floor(Math.random() * foodList.length);
+        }
+
+        spinBtn.addEventListener('click', () => {
+            if (isSpinning) return;
+            isSpinning = true;
+            spinBtn.disabled = true;
+            resultBox.innerText = '正在幫你想想...☕';
+
+            const sectorDegree = 360 / foodList.length;
+            const targetIndex = getRandomTarget(); // 隨機決定得獎者
+            
+            // 計算中獎品項停在正頂端指標的角度
+            const targetAngle = 360 - (targetIndex * sectorDegree + sectorDegree / 2);
+
+            // 基礎多轉 6 圈增加刺激感 + 補足當前角度餘數 + 目標角度
+            const extraRounds = 6 * 360; 
+            currentRotation = currentRotation + (360 - (currentRotation % 360)) + extraRounds + targetAngle;
+
+            // 觸發 CSS transition 旋轉
+            wheel.style.transform = `rotate(${currentRotation}deg)`;
+
+            // 監聽轉盤動畫結束 (4秒，與 CSS 裡的 transition 4s 一致)
+            setTimeout(() => {
+                isSpinning = false;
+                spinBtn.disabled = false;
+                resultBox.innerText = `今天就吃：🎉 ${foodList[targetIndex]} 🎉`;
+            }, 4000); 
+        });
+
+        // 6. 新增與刪除陣列元素 (Array push / splice)
+        addBtn.addEventListener('click', () => {
+            const newFood = foodInput.value.trim();
+            if (!newFood) return;
+            if (foodList.length >= 16) {
+                alert('口袋名單上限為 16 個，太多格子會變太小喔！');
+                return;
+            }
+            foodList.push(newFood); // Array.push 尾端新增
+            foodInput.value = '';
+            drawWheel();
+        });
+
+        // 支援 Enter 鍵快捷輸入
+        foodInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addBtn.click();
+        });
+
+        // 刪除品項功能
+        window.removeFood = function(index) {
+            if (foodList.length <= 2) {
+                alert('至少要留 2 個品項才能玩轉盤喔！');
+                return;
+            }
+            foodList.splice(index, 1); // Array.splice 特定位置刪除
+            drawWheel();
+        };
+
+        // 初始化第一次渲染
+        drawWheel();
+    </script>
+</body>
+</html>
